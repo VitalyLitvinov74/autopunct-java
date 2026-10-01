@@ -192,7 +192,7 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
                 : Kernel32.INSTANCE.ReadFile(pipe, bytes, bytes.length, count, operation);
             int error = immediate ? 0 : Kernel32.INSTANCE.GetLastError();
             if (!this.complete(pipe, operation, immediate, error, 1000)
-                    || !PipeApi.INSTANCE.GetOverlappedResult(pipe, operation, count, false)) {
+                    || !PipeApi.INSTANCE.GetOverlappedResult(pipe, operation.getPointer(), count, false)) {
                 throw new java.io.IOException("pipe_transfer_failed:" + (writing ? "write" : "read") + ":" + Kernel32.INSTANCE.GetLastError());
             }
             return count.getValue();
@@ -211,8 +211,8 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
         if (Kernel32.INSTANCE.WaitForSingleObject(operation.hEvent, timeout) == WinBase.WAIT_OBJECT_0) {
             return this.running;
         }
-        PipeApi.INSTANCE.CancelIoEx(pipe, operation);
-        PipeApi.INSTANCE.GetOverlappedResult(pipe, operation, new IntByReference(), true);
+        PipeApi.INSTANCE.CancelIoEx(pipe, operation.getPointer());
+        PipeApi.INSTANCE.GetOverlappedResult(pipe, operation.getPointer(), new IntByReference(), true);
         return false;
     }
 

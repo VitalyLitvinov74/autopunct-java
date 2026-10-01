@@ -34,6 +34,7 @@ class WindowsPipeTest {
         assertFalse(WinBase.INVALID_HANDLE_VALUE.equals(pipe));
         try {
             var count = new IntByReference();
+            java.util.concurrent.TimeUnit.MILLISECONDS.sleep(100);
             assertTrue(Kernel32.INSTANCE.WriteFile(pipe, request, request.length, count, null));
             var available = new IntByReference();
             long timeout = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
