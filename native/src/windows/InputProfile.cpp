@@ -188,10 +188,10 @@ std::optional<Snapshot> InputProfile::read(ITfContext* context, TfEditCookie coo
         if (GetWindowLongPtrW(focus, GWL_STYLE) & ES_PASSWORD) return std::nullopt;
         knownPlain = true;
     }
-    Ime::ComPtr<ITfProperty> scopeProperty;
+    Ime::ComPtr<ITfReadOnlyProperty> scopeProperty;
     VARIANT value;
     VariantInit(&value);
-    if (SUCCEEDED(context->GetProperty(GUID_PROP_INPUTSCOPE, &scopeProperty))
+    if (SUCCEEDED(context->GetAppProperty(GUID_PROP_INPUTSCOPE, &scopeProperty))
         && SUCCEEDED(scopeProperty->GetValue(cookie, caret, &value)) && value.vt == VT_UNKNOWN && value.punkVal) {
         Ime::ComPtr<ITfInputScope> scope;
         if (SUCCEEDED(value.punkVal->QueryInterface(IID_ITfInputScope, reinterpret_cast<void**>(&scope)))) {
