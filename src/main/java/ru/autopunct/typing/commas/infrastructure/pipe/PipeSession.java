@@ -156,6 +156,10 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
             if (this.running) {
                 String kind = failure instanceof ExecutionException && failure.getCause() != null
                     ? failure.getCause().getClass().getSimpleName() : failure.getClass().getSimpleName();
+                if (failure instanceof java.io.IOException && failure.getMessage() != null
+                        && failure.getMessage().startsWith("pipe_transfer_failed:")) {
+                    kind = failure.getMessage();
+                }
                 System.err.println("pipe_request_skipped:" + kind);
             }
         } finally {
@@ -181,7 +185,7 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
             int error = immediate ? 0 : Kernel32.INSTANCE.GetLastError();
             if (!this.complete(pipe, operation, immediate, error, 1000)
                     || !PipeApi.INSTANCE.GetOverlappedResult(pipe, operation, count, false)) {
-                throw new java.io.IOException("pipe_transfer_failed");
+                throw new java.io.IOException("pipe_transfer_failed:" + (writing ? "write" : "read") + ":" + Kernel32.INSTANCE.GetLastError());
             }
             return count.getValue();
         } finally {

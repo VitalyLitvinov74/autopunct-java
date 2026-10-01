@@ -25,12 +25,12 @@ try {
     $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $Session = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
     $Pipe = "AutoPunct-$Sid-$Session"
-    $Client = [System.IO.Pipes.NamedPipeClientStream]::new('.', $Pipe, [System.IO.Pipes.PipeDirection]::InOut, [System.IO.Pipes.PipeOptions]::Asynchronous)
-    $Client.Connect(15000)
-    $Client.ReadMode = [System.IO.Pipes.PipeTransmissionMode]::Message
     $Text = 'Известно что на улице красивый вид '
     $Request = @{version=1; requestId=701; contextId='installer-test'; revision=1; text=$Text; caretOffset=$Text.Length; application='notepad.exe'} | ConvertTo-Json -Compress
     $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Request)
+    $Client = [System.IO.Pipes.NamedPipeClientStream]::new('.', $Pipe, [System.IO.Pipes.PipeDirection]::InOut, [System.IO.Pipes.PipeOptions]::Asynchronous)
+    $Client.Connect(15000)
+    $Client.ReadMode = [System.IO.Pipes.PipeTransmissionMode]::Message
     $Client.Write($Bytes, 0, $Bytes.Length)
     $Buffer = [byte[]]::new(8192)
     $Cancellation = [System.Threading.CancellationTokenSource]::new(10000)
