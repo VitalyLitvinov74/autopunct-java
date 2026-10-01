@@ -154,7 +154,9 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
             this.transfer(pipe, bytes, true);
         } catch (Exception failure) {
             if (this.running) {
-                System.err.println("pipe_request_skipped");
+                String kind = failure instanceof ExecutionException && failure.getCause() != null
+                    ? failure.getCause().getClass().getSimpleName() : failure.getClass().getSimpleName();
+                System.err.println("pipe_request_skipped:" + kind);
             }
         } finally {
             this.release(pipe);

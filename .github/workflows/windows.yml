@@ -29,6 +29,7 @@ jobs:
         shell: pwsh
         run: ./packaging/Test-Installer.ps1
       - name: Сохранить установщик
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: AutoPunct-Windows
@@ -42,3 +43,4 @@ jobs:
             target/surefire-reports/
             build/native-x64/Testing/
             build/native-Win32/Testing/
+            build/installed-*.log

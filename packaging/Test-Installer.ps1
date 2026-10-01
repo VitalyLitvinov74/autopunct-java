@@ -21,7 +21,7 @@ try {
     }
     $Run = Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue
     if ($Run -and $Run.PSObject.Properties.Name -contains 'AutoPunct') { throw 'Autostart was enabled unexpectedly' }
-    $ApplicationProcess = Start-Process -FilePath "$InstallRoot/AutoPunct.exe" -ArgumentList '--autopunct.tray.enabled=false' -PassThru
+    $ApplicationProcess = Start-Process -FilePath "$InstallRoot/AutoPunct.exe" -ArgumentList '--autopunct.tray.enabled=false' -RedirectStandardOutput "$ProjectRoot/build/installed-stdout.log" -RedirectStandardError "$ProjectRoot/build/installed-stderr.log" -PassThru
     $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $Session = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
     $Pipe = "AutoPunct-$Sid-$Session"
@@ -36,6 +36,8 @@ try {
     $Cancellation = [System.Threading.CancellationTokenSource]::new(10000)
     $Read = $Client.ReadAsync($Buffer, 0, $Buffer.Length, $Cancellation.Token).GetAwaiter().GetResult()
     $Reply = [System.Text.Encoding]::UTF8.GetString($Buffer, 0, $Read) | ConvertFrom-Json
+    Write-Output "Получено байтов ответа: $Read"
+    Write-Output ($Reply | ConvertTo-Json -Compress)
     if ($Reply.status -ne 'ok' -or $Reply.requestId -ne 701 -or $Reply.contextId -ne 'installer-test' -or $Reply.commas[0] -ne 8) {
         throw 'Installed application returned an invalid correction'
     }
@@ -44,6 +46,7 @@ try {
 } finally {
     if ($Client) { $Client.Dispose() }
     if ($ApplicationProcess -and -not $ApplicationProcess.HasExited) { Stop-Process -Id $ApplicationProcess.Id -Force }
+    if (Test-Path "$ProjectRoot/build/installed-stderr.log") { Get-Content "$ProjectRoot/build/installed-stderr.log" }
     if ($Installed) {
         $Uninstaller = Start-Process -FilePath "$InstallRoot/unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait -PassThru
         if ($Uninstaller.ExitCode -ne 0) { throw "Uninstaller exited with $($Uninstaller.ExitCode)" }
