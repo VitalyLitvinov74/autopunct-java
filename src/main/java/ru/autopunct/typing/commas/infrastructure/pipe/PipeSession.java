@@ -5,8 +5,7 @@ import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 import jakarta.annotation.PreDestroy;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 import ru.autopunct.windows.infrastructure.Desktop;
 import ru.autopunct.windows.infrastructure.PipeApi;
@@ -20,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /** Принимает ограниченные локальные запросы и передаёт их через готовую шину CQRS. */
 @Component
 @ConditionalOnProperty(name = "autopunct.pipe.enabled", havingValue = "true")
-public final class PipeSession implements AutoCloseable {
+public final class PipeSession implements AutoCloseable, SmartLifecycle {
     private final Function<byte[], byte[]> requests;
     private final Desktop desktop;
     private final Set<WinNT.HANDLE> handles = ConcurrentHashMap.newKeySet();
@@ -43,19 +42,32 @@ public final class PipeSession implements AutoCloseable {
         this.desktop = desktop;
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void open() {
+    @Override
+    public void start() {
         this.name = this.desktop.pipeName();
         this.running = true;
-        var listening = new Thread(this::listen, "autopunct-pipe");
+        var first = this.createPipe();
+        var listening = new Thread(() -> this.listen(first), "autopunct-pipe");
         listening.start();
     }
 
-    private void listen() {
+    @Override
+    public boolean isRunning() {
+        return this.running;
+    }
+
+    @Override
+    public void stop() {
+        this.close();
+    }
+
+    private void listen(WinNT.HANDLE first) {
+        WinNT.HANDLE pending = first;
         while (this.running) {
             WinNT.HANDLE pipe = null;
             try {
-                pipe = this.createPipe();
+                pipe = pending == null ? this.createPipe() : pending;
+                pending = null;
                 if (pipe == null) {
                     return;
                 }
