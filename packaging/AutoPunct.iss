@@ -31,10 +31,12 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Source: "{#ImageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Registry]
-Root: HKLM; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueData: "{app}\native\x64\AutoPunctInput.dll"; Flags: uninsdeletekey 64bit
-Root: HKLM; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"; Flags: 64bit
-Root: HKLM; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueData: "{app}\native\x86\AutoPunctInput.dll"; Flags: uninsdeletekey 32bit
-Root: HKLM; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"; Flags: 32bit
+Root: HKLM64; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}"; Flags: uninsdeletekey
+Root: HKLM32; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}"; Flags: uninsdeletekey
+Root: HKLM64; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueData: "{app}\native\x64\AutoPunctInput.dll"
+Root: HKLM64; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"
+Root: HKLM32; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueData: "{app}\native\x86\AutoPunctInput.dll"
+Root: HKLM32; Subkey: "Software\Classes\CLSID\{{41969CDB-7C7F-4F7B-99C9-2E50695E3CF6}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"
 
 [Icons]
 Name: "{group}\Автозапятые"; Filename: "{app}\AutoPunct.exe"

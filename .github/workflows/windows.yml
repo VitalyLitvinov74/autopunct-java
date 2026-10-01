@@ -25,6 +25,9 @@ jobs:
       - name: Проверить и собрать
         shell: pwsh
         run: ./packaging/Build-Windows.ps1
+      - name: Проверить установку, запуск и удаление
+        shell: pwsh
+        run: ./packaging/Test-Installer.ps1
       - name: Сохранить установщик
         uses: actions/upload-artifact@v4
         with:
