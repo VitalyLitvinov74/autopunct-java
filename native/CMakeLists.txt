@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.24)
+project(AutoPunctInput LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+include(FetchContent)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz)
+FetchContent_MakeAvailable(json googletest)
+enable_testing()
+add_library(verified_edit src/typing/commas/infrastructure/VerifiedEdit.cpp)
+target_include_directories(verified_edit PUBLIC src)
+add_executable(native_tests test/VerifiedEditTest.cpp)
+target_link_libraries(native_tests PRIVATE verified_edit GTest::gtest_main nlohmann_json::nlohmann_json)
+include(GoogleTest)
+gtest_discover_tests(native_tests)
+if(WIN32)
+  FetchContent_Declare(libime2 GIT_REPOSITORY https://github.com/EasyIME/libIME2.git GIT_TAG 717b1901a417667405399cfbf25b25664efcf0e4 SOURCE_SUBDIR src)
+  FetchContent_MakeAvailable(libime2)
+  add_library(AutoPunctInput SHARED
+    src/windows/Module.cpp
+    src/windows/Dll.cpp
+    src/windows/InputProfile.cpp
+    src/windows/PipeConnection.cpp
+    src/windows/AutoPunctInput.def
+  )
+  target_include_directories(AutoPunctInput PRIVATE src ${libime2_SOURCE_DIR}/src)
+  target_compile_definitions(AutoPunctInput PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
+  target_compile_options(AutoPunctInput PRIVATE /utf-8 /W4)
+  target_link_libraries(AutoPunctInput PRIVATE verified_edit libIME2_static nlohmann_json::nlohmann_json ole32 oleaut32 uuid advapi32 user32 gdi32 shell32 imm32 msimg32)
+  set_target_properties(AutoPunctInput PROPERTIES PREFIX "")
+  add_executable(registration_test test/RegistrationTest.cpp)
+  target_link_libraries(registration_test PRIVATE ole32)
+  add_test(NAME registration_exports COMMAND registration_test $<TARGET_FILE:AutoPunctInput>)
+endif()

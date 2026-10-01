@@ -1,0 +1,11 @@
+name: autopunct-java
+services:
+  builder:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    working_dir: /workspace
+    command: ["sleep", "infinity"]
+    volumes:
+      - .:/workspace
+      - ../../work/autopunct/maven-cache:/root/.m2
