@@ -25,6 +25,7 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
     private final Set<WinNT.HANDLE> handles = ConcurrentHashMap.newKeySet();
     private final AtomicLong generation = new AtomicLong();
     private final ExecutorService connections = Executors.newFixedThreadPool(4);
+    private final ScheduledExecutorService deadlines = Executors.newSingleThreadScheduledExecutor();
     private final ThreadPoolExecutor analysis = new ThreadPoolExecutor(
         1,
         1,
@@ -152,6 +153,13 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
             });
             byte[] bytes = response.get(1000, TimeUnit.MILLISECONDS);
             this.transfer(pipe, bytes, true);
+            var deadline = this.deadlines.schedule(() -> this.release(pipe), 2, TimeUnit.SECONDS);
+            try {
+                // Windows удаляет непрочитанные данные при DisconnectNamedPipe.
+                Kernel32.INSTANCE.FlushFileBuffers(pipe);
+            } finally {
+                deadline.cancel(false);
+            }
         } catch (Exception failure) {
             if (this.running) {
                 String kind = failure instanceof ExecutionException && failure.getCause() != null
@@ -217,6 +225,7 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
             this.release(pipe);
         }
         this.connections.shutdownNow();
+        this.deadlines.shutdownNow();
         this.analysis.shutdownNow();
     }
 }
