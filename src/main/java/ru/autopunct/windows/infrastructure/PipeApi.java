@@ -13,4 +13,7 @@ public interface PipeApi extends Kernel32 {
     PipeApi INSTANCE = Native.load("kernel32", PipeApi.class, W32APIOptions.UNICODE_OPTIONS);
     boolean CancelIoEx(WinNT.HANDLE handle, Pointer operation);
     boolean GetOverlappedResult(WinNT.HANDLE handle, Pointer operation, IntByReference transferred, boolean wait);
+    boolean ConnectNamedPipe(WinNT.HANDLE handle, Pointer operation);
+    boolean ReadFile(WinNT.HANDLE handle, Pointer buffer, int size, IntByReference transferred, Pointer operation);
+    boolean WriteFile(WinNT.HANDLE handle, Pointer buffer, int size, IntByReference transferred, Pointer operation);
 }

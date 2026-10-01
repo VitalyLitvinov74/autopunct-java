@@ -1,6 +1,7 @@
 package ru.autopunct.typing.commas.infrastructure.pipe;
 
 import com.sun.jna.platform.win32.*;
+import com.sun.jna.Memory;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 import jakarta.annotation.PreDestroy;
@@ -74,7 +75,8 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
                 }
                 var operation = new WinBase.OVERLAPPED();
                 operation.hEvent = Kernel32.INSTANCE.CreateEvent(null, true, false, null);
-                boolean connected = Kernel32.INSTANCE.ConnectNamedPipe(pipe, operation);
+                operation.write();
+                boolean connected = PipeApi.INSTANCE.ConnectNamedPipe(pipe, operation.getPointer());
                 int error = connected ? 0 : Kernel32.INSTANCE.GetLastError();
                 boolean acceptedConnection;
                 try {
@@ -185,15 +187,23 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
     private int transfer(WinNT.HANDLE pipe, byte[] bytes, boolean writing) throws java.io.IOException {
         var operation = new WinBase.OVERLAPPED();
         operation.hEvent = Kernel32.INSTANCE.CreateEvent(null, true, false, null);
+        operation.write();
         var count = new IntByReference();
-        try {
+        // Память существует до завершения IRP; JNA byte[] годится только для синхронных вызовов.
+        try (var buffer = new Memory(bytes.length)) {
+            if (writing) {
+                buffer.write(0, bytes, 0, bytes.length);
+            }
             boolean immediate = writing
-                ? Kernel32.INSTANCE.WriteFile(pipe, bytes, bytes.length, count, operation)
-                : Kernel32.INSTANCE.ReadFile(pipe, bytes, bytes.length, count, operation);
+                ? PipeApi.INSTANCE.WriteFile(pipe, buffer, bytes.length, count, operation.getPointer())
+                : PipeApi.INSTANCE.ReadFile(pipe, buffer, bytes.length, count, operation.getPointer());
             int error = immediate ? 0 : Kernel32.INSTANCE.GetLastError();
             if (!this.complete(pipe, operation, immediate, error, 1000)
                     || !PipeApi.INSTANCE.GetOverlappedResult(pipe, operation.getPointer(), count, false)) {
                 throw new java.io.IOException("pipe_transfer_failed:" + (writing ? "write" : "read") + ":" + Kernel32.INSTANCE.GetLastError());
+            }
+            if (!writing) {
+                buffer.read(0, bytes, 0, count.getValue());
             }
             return count.getValue();
         } finally {
@@ -212,6 +222,7 @@ public final class PipeSession implements AutoCloseable, SmartLifecycle {
             return this.running;
         }
         PipeApi.INSTANCE.CancelIoEx(pipe, operation.getPointer());
+        Kernel32.INSTANCE.WaitForSingleObject(operation.hEvent, -1);
         PipeApi.INSTANCE.GetOverlappedResult(pipe, operation.getPointer(), new IntByReference(), true);
         return false;
     }
