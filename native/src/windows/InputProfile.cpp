@@ -191,7 +191,7 @@ std::optional<Snapshot> InputProfile::read(ITfContext* context, TfEditCookie coo
     Ime::ComPtr<ITfReadOnlyProperty> scopeProperty;
     VARIANT value;
     VariantInit(&value);
-    if (SUCCEEDED(context->GetAppProperty(GUID_PROP_INPUTSCOPE, &scopeProperty))
+    if (SUCCEEDED(context->GetAppProperty(InputScopeProperty, &scopeProperty))
         && SUCCEEDED(scopeProperty->GetValue(cookie, caret, &value)) && value.vt == VT_UNKNOWN && value.punkVal) {
         Ime::ComPtr<ITfInputScope> scope;
         if (SUCCEEDED(value.punkVal->QueryInterface(IID_ITfInputScope, reinterpret_cast<void**>(&scope)))) {
